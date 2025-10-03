@@ -1,117 +1,81 @@
 // src/pages/Login.jsx
 import React, { useState } from "react";
+import axios from "axios";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut",
-        when: "beforeChildren",
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5 },
-    },
-  };
-
-  const buttonVariants = {
-    initial: { scale: 1 },
-    hover: {
-      scale: 1.05,
-      boxShadow: "0px 5px 15px rgba(0, 0, 0, 0.1)",
-      transition: { duration: 0.2 },
-    },
-    tap: { scale: 0.95 },
-    loading: { scale: 0.98, opacity: 0.8 },
-  };
-
-  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  // Validation
   const validateForm = () => {
     const { email, password } = formData;
     const newErrors = {};
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email) {
-      newErrors.email = "Email is required";
-    } else if (!emailRegex.test(email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
 
-    if (!password) {
-      newErrors.password = "Password is required";
-    } else if (password.length < 6) {
+    if (!email) newErrors.email = "Email is required";
+    else if (!emailRegex.test(email)) newErrors.email = "Invalid email";
+
+    if (!password) newErrors.password = "Password is required";
+    else if (password.length < 6)
       newErrors.password = "Password must be at least 6 characters";
-    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submit (using fetch)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
-
     if (!validateForm()) return;
 
     setLoading(true);
     try {
-      const res = await fetch("https://ppp-v4ah.onrender.com/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const response = await axios.post(
+        "https://ppp-v4ah.onrender.com/api/auth/login",
+        {
           email: formData.email,
           password: formData.password,
-        }),
-      });
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
 
-      const data = await res.json();
-      console.log("Backend response:", data);
+      const { token } = response.data;
 
-      if (res.ok && data.token) {
-        localStorage.setItem("token", data.token);
+      if (token) {
+        localStorage.setItem("token", token);
+
+        // Optionally save a placeholder user object to display in profile
+        const user = {
+          name: "Demo User",
+          email: formData.email,
+          college: "Demo College",
+          branch: "Demo Branch",
+          graduationYear: 2025,
+        };
+        localStorage.setItem("user", JSON.stringify(user));
+
         setMessage("✅ Login successful! Redirecting to profile...");
-        setTimeout(() => navigate("/profile"), 1500);
+
+        setTimeout(() => navigate("/profile"), 1200);
       } else {
-        setMessage(data.message || "❌ Invalid credentials");
+        setMessage("⚠️ Login successful, but no token received");
       }
     } catch (err) {
-      setMessage("🚫 Network error: " + err.message);
+      console.error(err);
+      setMessage(
+        err.response?.data?.message ||
+          "❌ Login failed. Check credentials or try again later."
+      );
     } finally {
       setLoading(false);
     }
@@ -120,250 +84,54 @@ const Login = () => {
   return (
     <motion.div
       className="login-container"
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-      style={{
-        maxWidth: "450px",
-        margin: "50px auto",
-        padding: "40px 30px",
-        background: "white",
-        borderRadius: "12px",
-        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.1)",
-        textAlign: "center",
-      }}
+      style={{ maxWidth: "450px", margin: "50px auto", padding: "40px 30px", background: "white", borderRadius: "12px", boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
     >
-      <motion.h2
-        variants={itemVariants}
-        style={{
-          marginBottom: "30px",
-          color: "#333",
-          fontSize: "2rem",
-          fontWeight: "600",
-        }}
-      >
-        Welcome Back
-      </motion.h2>
-
-      <motion.p
-        variants={itemVariants}
-        style={{
-          marginBottom: "30px",
-          color: "#666",
-          fontSize: "16px",
-        }}
-      >
-        Sign in to your placement preparation account
-      </motion.p>
+      <h2 className="text-2xl font-semibold mb-4">Welcome Back</h2>
+      <p className="text-gray-600 mb-6">Sign in to your placement preparation account</p>
 
       <form onSubmit={handleSubmit}>
-        {/* Email */}
-        <motion.div
-          variants={itemVariants}
-          style={{ marginBottom: "20px", textAlign: "left" }}
-        >
-          <label
-            style={{
-              display: "block",
-              marginBottom: "5px",
-              fontWeight: "500",
-              color: "#555",
-            }}
-          >
-            Email Address
-          </label>
-          <motion.input
-            whileFocus={{ scale: 1.02, borderColor: "#007bff" }}
+        <div className="mb-4 text-left">
+          <label className="block mb-1 font-medium">Email Address</label>
+          <input
             type="email"
             name="email"
-            placeholder="Enter your email"
             value={formData.email}
             onChange={handleChange}
+            className={`w-full px-3 py-2 border rounded ${errors.email ? "border-red-500" : "border-gray-300"}`}
+            placeholder="Enter your email"
             required
-            style={{
-              width: "100%",
-              padding: "12px 15px",
-              border: `2px solid ${errors.email ? "#ff4757" : "#e1e5e9"}`,
-              borderRadius: "8px",
-              fontSize: "16px",
-              transition: "all 0.3s ease",
-              outline: "none",
-            }}
           />
-          {errors.email && (
-            <motion.p
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={{
-                color: "#ff4757",
-                fontSize: "14px",
-                marginTop: "5px",
-                textAlign: "left",
-              }}
-            >
-              {errors.email}
-            </motion.p>
-          )}
-        </motion.div>
+          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+        </div>
 
-        {/* Password */}
-        <motion.div
-          variants={itemVariants}
-          style={{ marginBottom: "25px", textAlign: "left" }}
-        >
-          <label
-            style={{
-              display: "block",
-              marginBottom: "5px",
-              fontWeight: "500",
-              color: "#555",
-            }}
-          >
-            Password
-          </label>
-          <motion.input
-            whileFocus={{ scale: 1.02, borderColor: "#007bff" }}
+        <div className="mb-4 text-left">
+          <label className="block mb-1 font-medium">Password</label>
+          <input
             type="password"
             name="password"
-            placeholder="Enter your password"
             value={formData.password}
             onChange={handleChange}
+            className={`w-full px-3 py-2 border rounded ${errors.password ? "border-red-500" : "border-gray-300"}`}
+            placeholder="Enter your password"
             required
-            style={{
-              width: "100%",
-              padding: "12px 15px",
-              border: `2px solid ${errors.password ? "#ff4757" : "#e1e5e9"}`,
-              borderRadius: "8px",
-              fontSize: "16px",
-              transition: "all 0.3s ease",
-              outline: "none",
-            }}
           />
-          {errors.password && (
-            <motion.p
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={{
-                color: "#ff4757",
-                fontSize: "14px",
-                marginTop: "5px",
-                textAlign: "left",
-              }}
-            >
-              {errors.password}
-            </motion.p>
-          )}
-        </motion.div>
+          {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+        </div>
 
-        {/* Submit Button */}
-        <motion.button
+        <button
           type="submit"
-          variants={buttonVariants}
-          initial="initial"
-          whileHover={loading ? "loading" : "hover"}
-          whileTap="tap"
-          animate={loading ? "loading" : "initial"}
+          className={`w-full py-3 rounded text-white font-medium ${loading ? "bg-gray-500 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
           disabled={loading}
-          style={{
-            width: "100%",
-            padding: "14px",
-            backgroundColor: loading ? "#6c757d" : "#28a745",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "16px",
-            fontWeight: "600",
-            cursor: loading ? "not-allowed" : "pointer",
-            marginBottom: "20px",
-          }}
         >
-          {loading ? (
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-              }}
-            >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                style={{
-                  width: "16px",
-                  height: "16px",
-                  border: "2px solid transparent",
-                  borderTop: "2px solid white",
-                  borderRadius: "50%",
-                }}
-              />
-              Signing In...
-            </motion.span>
-          ) : (
-            "Sign In"
-          )}
-        </motion.button>
+          {loading ? "Signing In..." : "Sign In"}
+        </button>
       </form>
 
-      {/* Message */}
-      {message && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          style={{
-            padding: "15px",
-            marginTop: "20px",
-            borderRadius: "8px",
-            backgroundColor: message.includes("successful")
-              ? "#d4edda"
-              : "#f8d7da",
-            color: message.includes("successful") ? "#155724" : "#721c24",
-            border: `1px solid ${
-              message.includes("successful") ? "#c3e6cb" : "#f5c6cb"
-            }`,
-          }}
-        >
-          {message}
-        </motion.div>
-      )}
+      {message && <p className={`mt-4 p-2 rounded ${message.includes("successful") ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>{message}</p>}
 
-      {/* Register Link */}
-      <motion.p
-        variants={itemVariants}
-        style={{ marginTop: "25px", color: "#666" }}
-      >
-        Don't have an account?{" "}
-        <Link
-          to="/register"
-          style={{
-            color: "#007bff",
-            textDecoration: "none",
-            fontWeight: "600",
-          }}
-        >
-          Create Account
-        </Link>
-      </motion.p>
-
-      {/* Demo Info */}
-      <motion.div
-        variants={itemVariants}
-        style={{
-          marginTop: "30px",
-          padding: "15px",
-          backgroundColor: "#f8f9fa",
-          borderRadius: "8px",
-          border: "1px solid #e9ecef",
-        }}
-      >
-        <p style={{ margin: 0, color: "#6c757d", fontSize: "14px" }}>
-          <strong>Demo Credentials:</strong>
-          <br />
-          Use your registered email and password to test the login
-        </p>
-      </motion.div>
+      <p className="mt-4 text-gray-600">
+        Don't have an account? <Link to="/register" className="text-blue-600 font-medium">Create Account</Link>
+      </p>
     </motion.div>
   );
 };

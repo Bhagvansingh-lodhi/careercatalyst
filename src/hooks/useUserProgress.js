@@ -1,22 +1,30 @@
-// hooks/useUserProgress.js
-import { useState, useEffect } from 'react';
 import useLocalStorage from './useLocalStorage';
 
+const initialProgress = {
+  solvedProblems: {},
+  completedTests: {},
+  skillLevels: {
+    'Data Structures': 0,
+    'Algorithms': 0,
+    'Aptitude': 0,
+    'Programming': 0,
+    'Problem Solving': 0
+  }
+};
+
 const useUserProgress = () => {
-  const [userProgress, setUserProgress] = useLocalStorage('userProgress', {
-    solvedProblems: {},
-    completedTests: {},
-    skillLevels: {
-      'Data Structures': 0,
-      'Algorithms': 0,
-      'Aptitude': 0,
-      'Programming': 0,
-      'Problem Solving': 0
-    }
-  });
+  const [userProgress, setUserProgress] = useLocalStorage('userProgress', initialProgress);
+
+  const safeSetUserProgress = (updater) => {
+    setUserProgress((prev) => {
+      // ensure prev never becomes undefined
+      const safePrev = prev ?? initialProgress;
+      return typeof updater === "function" ? updater(safePrev) : updater;
+    });
+  };
 
   const markProblemSolved = (problemId, category) => {
-    setUserProgress(prev => ({
+    safeSetUserProgress(prev => ({
       ...prev,
       solvedProblems: {
         ...prev.solvedProblems,
@@ -30,7 +38,7 @@ const useUserProgress = () => {
   };
 
   const completeTest = (testId, score) => {
-    setUserProgress(prev => ({
+    safeSetUserProgress(prev => ({
       ...prev,
       completedTests: {
         ...prev.completedTests,
@@ -40,7 +48,7 @@ const useUserProgress = () => {
   };
 
   return {
-    userProgress,
+    userProgress: userProgress ?? initialProgress,
     markProblemSolved,
     completeTest
   };

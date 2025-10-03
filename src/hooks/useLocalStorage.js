@@ -1,23 +1,35 @@
 // hooks/useLocalStorage.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 const useLocalStorage = (key, initialValue) => {
   const [storedValue, setStoredValue] = useState(() => {
     try {
       const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
+
+      // If nothing stored or invalid "undefined"
+      if (!item || item === "undefined") {
+        window.localStorage.setItem(key, JSON.stringify(initialValue));
+        return initialValue;
+      }
+
+      return JSON.parse(item);
     } catch (error) {
-      console.error(error);
+      console.warn(`Error reading localStorage key "${key}", resetting...`, error);
+      window.localStorage.setItem(key, JSON.stringify(initialValue));
       return initialValue;
     }
   });
 
   const setValue = (value) => {
     try {
-      setStoredValue(value);
-      window.localStorage.setItem(key, JSON.stringify(value));
+      // Support function updater like useState
+      const valueToStore =
+        value instanceof Function ? value(storedValue) : value;
+
+      setStoredValue(valueToStore);
+      window.localStorage.setItem(key, JSON.stringify(valueToStore));
     } catch (error) {
-      console.error(error);
+      console.error(`Error setting localStorage key "${key}":`, error);
     }
   };
 

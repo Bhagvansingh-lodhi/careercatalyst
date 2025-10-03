@@ -5,7 +5,7 @@ import TestModal from '../components/TestModal'
 
 const MockTests = () => {
   const [selectedTest, setSelectedTest] = useState(null)
-  const [filter, setFilter] = useState('all') // 'all', 'attempted', 'unattempted'
+  const [filter, setFilter] = useState('all')
   const { userProgress, completeTest } = useUserProgress()
 
   const handleStartTest = (test) => {
@@ -22,8 +22,23 @@ const MockTests = () => {
     const isAttempted = userProgress.completedTests[test.id] !== undefined
     if (filter === 'attempted') return isAttempted
     if (filter === 'unattempted') return !isAttempted
-    return true // 'all'
+    return true
   })
+
+  const getDifficultyColor = (difficulty) => {
+    switch (difficulty.toLowerCase()) {
+      case 'easy': return 'bg-green-100 text-green-800 border-green-200'
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      case 'hard': return 'bg-red-100 text-red-800 border-red-200'
+      default: return 'bg-blue-100 text-blue-800 border-blue-200'
+    }
+  }
+
+  const getScoreColor = (score) => {
+    if (score >= 80) return 'text-green-600 bg-green-50 border-green-200'
+    if (score >= 60) return 'text-yellow-600 bg-yellow-50 border-yellow-200'
+    return 'text-red-600 bg-red-50 border-red-200'
+  }
 
   return (
     <div className="pt-16 bg-gray-50 min-h-screen">
@@ -38,42 +53,29 @@ const MockTests = () => {
 
         {/* Filter Tabs */}
         <div className="flex space-x-4 mb-8">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
-              filter === 'all' 
-                ? 'bg-blue-100 text-blue-700' 
-                : 'bg-white text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            All Tests
-          </button>
-          <button
-            onClick={() => setFilter('attempted')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
-              filter === 'attempted' 
-                ? 'bg-blue-100 text-blue-700' 
-                : 'bg-white text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            Attempted
-          </button>
-          <button
-            onClick={() => setFilter('unattempted')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
-              filter === 'unattempted' 
-                ? 'bg-blue-100 text-blue-700' 
-                : 'bg-white text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            Unattempted
-          </button>
+          {[
+            { key: 'all', label: 'All Tests' },
+            { key: 'attempted', label: 'Attempted' },
+            { key: 'unattempted', label: 'Unattempted' }
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 border ${
+                filter === key 
+                  ? 'bg-blue-100 text-blue-700 border-blue-200' 
+                  : 'bg-white text-gray-600 hover:bg-gray-100 border-gray-200'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
         
         {/* Tests Grid */}
         {filteredTests.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200">
-            <i className="fas fa-clipboard-list text-4xl text-gray-300 mb-4"></i>
+            <div className="text-4xl text-gray-300 mb-4">📝</div>
             <h3 className="text-lg font-medium text-gray-700 mb-2">No tests found</h3>
             <p className="text-gray-500">
               {filter === 'attempted' 
@@ -89,33 +91,33 @@ const MockTests = () => {
             {filteredTests.map((test) => {
               const userScore = userProgress.completedTests[test.id]
               const isAttempted = userScore !== undefined
-              const scoreColor = userScore >= 80 ? 'text-green-600' : userScore >= 60 ? 'text-yellow-600' : 'text-red-600'
               
               return (
-                <div key={test.id} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 hover:shadow-md transition-shadow duration-300">
+                <div key={test.id} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 hover:shadow-md transition-all duration-300">
                   <div className="p-6">
                     <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-xl font-semibold text-gray-900">{test.title}</h3>
-                        <span className="inline-block mt-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">{test.title}</h3>
+                        <span className={`inline-block text-xs font-medium px-2.5 py-1 rounded-full border ${getDifficultyColor(test.difficulty)}`}>
                           {test.difficulty}
                         </span>
                       </div>
                       {isAttempted && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <i className="fas fa-check-circle mr-1"></i> Attempted
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                          ✅ Attempted
                         </span>
                       )}
                     </div>
-                    <p className="text-gray-600 mb-5">{test.description}</p>
+                    
+                    <p className="text-gray-600 mb-5 leading-relaxed">{test.description}</p>
                     
                     <div className="flex justify-between text-sm text-gray-500 mb-5">
                       <span className="flex items-center">
-                        <i className="fas fa-question-circle mr-2 text-blue-500"></i>
+                        <span className="w-5 h-5 mr-2">❓</span>
                         {test.questions} questions
                       </span>
                       <span className="flex items-center">
-                        <i className="fas fa-clock mr-2 text-blue-500"></i>
+                        <span className="w-5 h-5 mr-2">⏱️</span>
                         {test.duration} minutes
                       </span>
                     </div>
@@ -123,8 +125,10 @@ const MockTests = () => {
                     {isAttempted && (
                       <div className="mb-5">
                         <div className="flex justify-between text-sm mb-2">
-                          <span className="text-gray-600">Your performance</span>
-                          <span className={`font-semibold ${scoreColor}`}>{userScore}%</span>
+                          <span className="text-gray-600">Your score</span>
+                          <span className={`font-semibold px-2 py-1 rounded ${getScoreColor(userScore)}`}>
+                            {userScore}%
+                          </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div 
@@ -142,12 +146,12 @@ const MockTests = () => {
                       onClick={() => handleStartTest(test)}
                       className={`w-full py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center ${
                         isAttempted
-                          ? 'bg-blue-600 text-white hover:bg-blue-700'
-                          : 'bg-gradient-to-r from-blue-500 to-blue-700 text-white hover:from-blue-600 hover:to-blue-800'
+                          ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                          : 'bg-gradient-to-r from-blue-500 to-blue-700 text-white hover:from-blue-600 hover:to-blue-800 shadow-md'
                       }`}
                     >
                       <span>{isAttempted ? 'Retake Test' : 'Start Test Now'}</span>
-                      <i className="fas fa-arrow-right ml-2 text-xs"></i>
+                      <span className="ml-2">→</span>
                     </button>
                   </div>
                 </div>

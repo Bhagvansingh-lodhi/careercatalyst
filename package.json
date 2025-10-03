@@ -15,11 +15,13 @@
     "@fortawesome/free-solid-svg-icons": "^7.0.1",
     "@fortawesome/react-fontawesome": "^3.0.2",
     "@tailwindcss/vite": "^4.1.13",
+    "axios": "^1.12.2",
     "chart.js": "^4.5.0",
-    "framer-motion": "^12.23.18",
+    "framer-motion": "^12.23.22",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.1",
+    "react-syntax-highlighter": "^15.6.6",
     "tailwindcss": "^4.1.13"
   },
   "devDependencies": {
