@@ -1,6 +1,5 @@
 // src/pages/Login.jsx
 import React, { useState } from "react";
-import axios from "axios";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -83,7 +82,7 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submit
+  // Handle form submit (using fetch)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
@@ -92,44 +91,27 @@ const Login = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post(
-        "https://ppp-v4ah.onrender.com/api/auth/login",
-        {
+      const res = await fetch("https://ppp-v4ah.onrender.com/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           email: formData.email,
           password: formData.password,
-        },
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+        }),
+      });
 
-      console.log("Backend response:", response.data);
+      const data = await res.json();
+      console.log("Backend response:", data);
 
-      // Save token only
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
+      if (res.ok && data.token) {
+        localStorage.setItem("token", data.token);
         setMessage("✅ Login successful! Redirecting to profile...");
+        setTimeout(() => navigate("/profile"), 1500);
       } else {
-        setMessage("⚠️ Login successful, but no token received.");
+        setMessage(data.message || "❌ Invalid credentials");
       }
-
-      // Redirect after 1.5s
-      setTimeout(() => {
-        navigate("/profile");
-      }, 1500);
-    } catch (error) {
-      console.error("Full Axios error:", error);
-
-      if (error.response) {
-        setMessage(
-          error.response.data?.message ||
-            `Error ${error.response.status}: ${error.response.statusText}`
-        );
-      } else if (error.request) {
-        setMessage("🚫 No response from server. Please try again later.");
-      } else {
-        setMessage("❌ Request setup error: " + error.message);
-      }
+    } catch (err) {
+      setMessage("🚫 Network error: " + err.message);
     } finally {
       setLoading(false);
     }
